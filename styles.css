@@ -1,0 +1,230 @@
+:root {
+    --bg-color: #050505;
+    --accent-color: #CCFF00;
+    --text-color: #ffffff;
+    --dim-text: #888888;
+    --font-main: 'Outfit', sans-serif;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    -webkit-font-smoothing: antialiased;
+}
+
+body {
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    font-family: var(--font-main);
+    overflow: hidden; /* Prevent scrolling during workout */
+    height: 100vh;
+    width: 100vw;
+}
+
+#app {
+    height: 100%;
+    width: 100%;
+    position: relative;
+}
+
+/* Views */
+.view {
+    display: none;
+    height: 100%;
+    width: 100%;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    position: absolute;
+    top: 0;
+    left: 0;
+    opacity: 0;
+    transition: opacity 0.5s ease;
+}
+
+.view.active {
+    display: flex;
+    opacity: 1;
+}
+
+/* Landing */
+#landing-view h1 {
+    font-size: 3rem;
+    letter-spacing: 2px;
+    margin-bottom: 1rem;
+    text-transform: uppercase;
+    color: var(--accent-color);
+    text-shadow: 0 0 10px rgba(204, 255, 0, 0.3);
+}
+
+#today-protocol {
+    font-size: 1.5rem;
+    color: var(--dim-text);
+    margin-bottom: 3rem;
+    text-transform: uppercase;
+}
+
+.neon-btn {
+    background: transparent;
+    border: 2px solid var(--accent-color);
+    color: var(--accent-color);
+    padding: 1rem 3rem;
+    font-size: 1.2rem;
+    font-family: var(--font-main);
+    font-weight: 800;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.neon-btn:hover {
+    background: var(--accent-color);
+    color: var(--bg-color);
+    box-shadow: 0 0 20px var(--accent-color);
+}
+
+/* Workout View - Landscape (Default Split) */
+.split-layout {
+    display: flex;
+    width: 100%;
+    height: 90%;
+}
+
+.left-panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 2rem;
+    border-right: 1px solid #222;
+}
+
+.right-panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.visual-loop, .visual-static {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+    border-bottom: 1px solid #222;
+}
+
+.visual-static {
+    border-bottom: none;
+}
+
+img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain; /* Nano Banana implies detail, contain prevents cropping */
+    background: #0a0a0a;
+}
+
+/* Timer & Info */
+.timer-display {
+    font-size: 12vw; /* Massive responsive text */
+    font-weight: 800;
+    line-height: 1;
+    color: var(--text-color);
+    font-variant-numeric: tabular-nums;
+}
+
+.exercise-info h2 {
+    font-size: 3rem;
+    color: var(--accent-color);
+    margin-top: 1rem;
+    text-transform: uppercase;
+}
+
+.meta-tags {
+    margin-top: 1rem;
+    display: flex;
+    gap: 1rem;
+}
+
+.meta-tags span {
+    background: #222;
+    padding: 0.5rem 1rem;
+    font-size: 1rem;
+    border-radius: 4px;
+    text-transform: uppercase;
+}
+
+.detail-text {
+    position: absolute;
+    bottom: 1rem;
+    left: 1rem;
+    background: rgba(0,0,0,0.8);
+    padding: 0.5rem;
+    border-left: 3px solid var(--accent-color);
+}
+
+#up-next-display {
+    height: 10%;
+    display: flex;
+    align-items: center;
+    padding: 0 2rem;
+    font-size: 1.2rem;
+    color: var(--dim-text);
+    background: #0a0a0a;
+    width: 100%;
+    border-top: 1px solid #222;
+}
+
+.progress-bar-container {
+    width: 100%;
+    height: 5px;
+    background: #222;
+}
+
+.progress-fill {
+    height: 100%;
+    background: var(--accent-color);
+    width: 0%;
+    transition: width 1s linear;
+}
+
+/* Glitch Effect */
+.glitch {
+    position: relative;
+}
+
+/* Portrait Mobile Styles */
+@media (max-aspect-ratio: 1/1) {
+    .split-layout {
+        flex-direction: column;
+        height: 85%;
+    }
+    
+    .left-panel {
+        order: 1;
+        flex: 0 0 30%;
+        border-right: none;
+        border-bottom: 1px solid #222;
+        padding: 1rem;
+        align-items: center;
+        text-align: center;
+    }
+
+    .right-panel {
+        order: 2;
+        flex: 1;
+    }
+
+    .timer-display {
+        font-size: 20vw;
+    }
+
+    .exercise-info h2 {
+        font-size: 2rem;
+    }
+
+    img {
+        object-fit: cover; /* Fill space better on mobile */
+    }
+}

@@ -1,0 +1,77 @@
+{
+  "schedule": {
+    "1": "push",
+    "4": "push",
+    "2": "pull",
+    "5": "pull",
+    "3": "legs",
+    "6": "legs",
+    "0": "recovery"
+  },
+  "protocols": {
+    "push": [
+      "chest_press_incline",
+      "flyes_flat",
+      "seated_db_press"
+    ],
+    "pull": [
+      "one_arm_db_row"
+    ],
+    "legs": [
+      "goblet_squat"
+    ],
+    "recovery": [
+      "treadmill_walk"
+    ]
+  },
+  "library": {
+    "chest_press_incline": {
+      "name": "Incline DB Press",
+      "equipment": "DB + Bench",
+      "setting": "30-45 deg",
+      "detail": "Focus on upper chest squeeze.",
+      "vis_static": "assets/infographics/incline_db_press_nano_banana_1768077765614.png",
+      "vis_loop": "https://media.giphy.com/media/26AHG5KGFxSkqlB6w/giphy.gif"
+    },
+    "flyes_flat": {
+      "name": "Flat DB Flyes",
+      "equipment": "DB + Bench",
+      "setting": "Flat",
+      "detail": "Wide arc, 'hugging a tree' motion.",
+      "vis_static": "assets/infographics/flat_db_flyes_nano_banana_1768077783120.png",
+      "vis_loop": "https://media.giphy.com/media/3o7TjqM7k8wL2J5YQw/giphy.gif"
+    },
+    "seated_db_press": {
+      "name": "Seated DB Press",
+      "equipment": "DB + Bench",
+      "setting": "Upright",
+      "detail": "Vertical press for shoulders.",
+      "vis_static": "assets/infographics/seated_db_press_nano_banana_1768077812626.png",
+      "vis_loop": "https://media.giphy.com/media/xT9Igv3fJYAi36E2Z2/giphy.gif"
+    },
+    "one_arm_db_row": {
+      "name": "One-Arm DB Row",
+      "equipment": "DB + Bench",
+      "setting": "Flat",
+      "detail": "One knee on bench, pull to hip.",
+      "vis_static": "assets/infographics/one_arm_db_row_nano_banana_1768077797587.png",
+      "vis_loop": "https://media.giphy.com/media/3o7qD1yK5Y14560jSw/giphy.gif"
+    },
+    "goblet_squat": {
+      "name": "Goblet Squat",
+      "equipment": "DB",
+      "setting": "N/A",
+      "detail": "Vertical DB hold at chest.",
+      "vis_static": "assets/infographics/goblet_squat_nano_banana_1768077839347.png",
+      "vis_loop": "https://media.giphy.com/media/3o6ozkQbdfOIyCC6w8/giphy.gif"
+    },
+    "treadmill_walk": {
+      "name": "Treadmill Walk",
+      "equipment": "Treadmill",
+      "setting": "Incline",
+      "detail": "Speed 3.5mph, no hands on rails.",
+      "vis_static": "assets/infographics/treadmill_walk_nano_banana_1768077825486.png",
+      "vis_loop": "https://media.giphy.com/media/l2Je0oOcT4cioSIfu/giphy.gif"
+    }
+  }
+}
