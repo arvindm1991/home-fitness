@@ -162,6 +162,19 @@
           
           // Ensure voices are loaded and pick English
           const [voice, setVoice] = useState(null);
+          
+          const selectBestVoice = () => {
+              const all = window.speechSynthesis.getVoices();
+              // Priority: "Premium" -> "Enhanced" -> "Google" -> Default
+              const best = all.find(v => v.name.includes("Premium") && v.lang.startsWith("en")) ||
+                           all.find(v => v.name.includes("Enhanced") && v.lang.startsWith("en")) ||
+                           all.find(v => v.name.includes("Google") && v.lang.startsWith("en")) ||
+                           all.find(v => v.lang.startsWith("en-US")) ||
+                           all.find(v => v.lang.startsWith("en"));
+              if (best) setVoice(best);
+              return best;
+          };
+
           const [debugLog, setDebugLog] = useState([]);
           const addToLog = (msg) => setDebugLog(prev => [msg, ...prev].slice(0, 5));
           const [debugMsgs, setDebugMsgs] = useState([]);
@@ -187,6 +200,9 @@
 
               loadVoices();
               // window.speechSynthesis.onvoiceschanged = loadVoices; // DISABLED: Preventing Re-render flood
+              
+              // Try to load voices again after a delay (iOS quirk)
+              setTimeout(selectBestVoice, 1000);
               
               // Fallback: Retry every second for 5 seconds if no voices
               const i = setInterval(() => {
@@ -342,8 +358,8 @@
 
               const u = new SpeechSynthesisUtterance(text);
               u.volume = 1.0;
-              u.rate = 1.0;
-              // u.voice = null; // Let browser pick default for stability
+              u.rate = 1.0; // Normal rate
+              if (voice) u.voice = voice; // Use the "Premium" voice we found
 
               // Music Ducking
               if (audioRef.current && isRunning && !isMuted) {
@@ -573,7 +589,7 @@
                            />
                         </div>
 
-                        <div className="flex-1 bg-black flex items-center justify-center relative border-b md:border-b-0 md:border-r border-zinc-900 min-h-[350px]">
+                        <div className="flex-[3] bg-black flex items-center justify-center relative border-b md:border-b-0 md:border-r border-zinc-900 min-h-[50vh]">
                             {isResting ? (
                                 <div className="flex flex-col items-center justify-center p-8 text-center max-w-sm">
                                     <div className="mb-4 p-4 bg-zinc-900/50 rounded-full">
@@ -593,14 +609,29 @@
                             )}
                         </div>
 
-                        <div className="flex-1 p-8 flex flex-col justify-end gap-4 bg-zinc-950/80 backdrop-blur-sm">
+                        <div className="flex-1 p-6 flex flex-col justify-end gap-2 bg-zinc-950/80 backdrop-blur-sm border-t border-zinc-900">
                             <div>
                                 <span className="bg-lime-500 text-black px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wide">{currentEx.muscle}</span>
-                                <h2 className="text-4xl md:text-6xl font-black italic uppercase leading-none mt-2 text-transparent bg-clip-text bg-gradient-to-br from-white to-zinc-500">{currentEx.name}</h2>
+                                <h2 className="text-2xl md:text-4xl font-black italic uppercase leading-none mt-2 text-white">{currentEx.name}</h2>
                             </div>
-                            <p className="text-zinc-400 text-sm md:text-base border-l-2 border-lime-500 pl-4 py-1 leading-snug">
-                                {currentEx.instructions}
-                            </p>
+                            
+                            <div className="flex justify-between items-end">
+                                <p className="text-zinc-400 text-xs leading-relaxed max-w-md line-clamp-2 md:line-clamp-none">
+                                    {currentEx.instructions}
+                                </p>
+                            </div>
+
+                            <div className="mt-2 flex gap-2">
+                                <button onClick={handleStepComplete} className="flex-1 py-3 bg-white text-black font-black italic rounded-lg hover:bg-zinc-200 transition-colors flex items-center justify-center gap-2">
+                                     DONE <span className="text-xs not-italic text-zinc-400">({currentStep + 1}/{activeRoutineKeys.length})</span>
+                                </button>
+                                <button onClick={() => setIsRunning(!isRunning)} className={`p-3 rounded-lg font-bold transition-colors ${isRunning ? 'bg-zinc-800 text-zinc-400' : 'bg-lime-500 text-black'}`}>
+                                    {isRunning ? <Pause size={20} /> : <Play size={20} />}
+                                </button>
+                                <button onClick={skipStep} className="p-3 bg-zinc-800 text-white rounded-lg hover:bg-zinc-700 transition">
+                                    <div className="flex items-center"><Play size={12} className="fill-current" /><Play size={12} className="fill-current -ml-1" /></div>
+                                </button>
+                            </div>
                         </div>
                     </div>
 
@@ -702,15 +733,28 @@
                             <h3 className="text-zinc-400 text-xs font-bold uppercase mb-2">Debug Audio</h3>
                             <button 
                                 onClick={() => {
-                                    const u = new SpeechSynthesisUtterance("System verified.");
-                                    u.onstart = () => addToLog("Test: Start");
-                                    u.onend = () => addToLog("Test: End");
-                                    u.onerror = (e) => addToLog(`Test: Err ${e.error}`);
-                                    window.speechSynthesis.speak(u);
+                                    addToLog("Button Clicked..."); // 1. Immediate Feedback
+                                    const synth = window.speechSynthesis;
+                                    
+                                    // 2. Unstick iOS
+                                    synth.cancel();
+                                    
+                                    setTimeout(() => {
+                                        if (synth.paused) synth.resume();
+                                        
+                                        const u = new SpeechSynthesisUtterance("Alpha Bravo Charlie.");
+                                        u.rate = 0.9; // Slight slow down
+                                        u.onstart = () => addToLog("Event: Start");
+                                        u.onend = () => addToLog("Event: End");
+                                        u.onerror = (e) => addToLog(`Event: Err ${e.error}`);
+                                        
+                                        synth.speak(u);
+                                        addToLog("Cmd: Speak Sent");
+                                    }, 50);
                                 }}
                                 className="w-full mb-2 p-3 bg-zinc-800 text-white font-bold rounded-lg text-xs"
                             >
-                                TEST VOICE ALONE
+                                TEST VOICE (FORCE)
                             </button>
                             <div className="text-[10px] font-mono text-lime-500 bg-black p-2 rounded h-20 overflow-y-auto">
                                 {debugLog.length === 0 ? "No logs yet..." : debugLog.map((l, i) => <div key={i}>{l}</div>)}
