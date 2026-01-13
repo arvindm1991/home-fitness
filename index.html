@@ -47,7 +47,7 @@
         // ONE TIME ONLY: Clear assets for new generation batch
         const PROFILES = {
             man: {
-                config: { restTime: 60, rounds: 3 }, // Long rest, 3 sets
+                config: { restTime: 60, rounds: 3, setRestTime: 10 }, // Long rest, 3 sets
                 assets: [
                     'incline_db_press', 'flat_db_press', 'incline_db_fly', 'flat_db_fly',
                     'seated_shoulder_press', 'chest_supported_row', 'one_arm_row',
@@ -55,7 +55,8 @@
                     'db_pullover', 'bulgarian_split_squat', 'seated_rear_delt_fly',
                     'step_ups', 'spider_curl', 'overhead_tricep_ext', 'concentration_curl',
                     'bench_dips', 'prone_reverse_fly', 'prone_row', 'single_arm_incline_press',
-                    'seated_shrugs', 'goblet_squat_bench', 'seated_calf_raise', 'arnold_press'
+                    'seated_shrugs', 'goblet_squat_bench', 'seated_calf_raise', 'arnold_press',
+                    'lateral_raises', 'hammer_curls', 'romanian_deadlift_male', 'lunges_male'
                 ],
                 library: {
                     'incline_db_press': { name: "Incline DB Press", angle: "45° Incline", instructions: "Press DBs up, meeting in center.", key: 'incline_db_press', muscle: "Upper Chest", duration: 75 },
@@ -83,24 +84,33 @@
                     'goblet_squat_bench': { name: "Goblet Squat to Bench", angle: "Standing/Bench", instructions: "Squat until touching bench.", key: 'goblet_squat_bench', muscle: "Quads", duration: 90 },
                     'seated_calf_raise': { name: "Seated Calf Raise", angle: "Seated", instructions: "DBs on knees, raise heels.", key: 'seated_calf_raise', muscle: "Calves", duration: 75 },
                     'arnold_press': { name: "Arnold Press", angle: "Seated", instructions: "Rotate palms as you press.", key: 'arnold_press', muscle: "Shoulders", duration: 75 },
+                    'lateral_raises': { name: "DB Lateral Raises", angle: "Standing", instructions: "Raise arms to sides until parallel.", key: 'lateral_raises', muscle: "Side Delts", duration: 60 },
+                    'hammer_curls': { name: "Hammer Curls", angle: "Standing", instructions: "Curl with neutral grip.", key: 'hammer_curls', muscle: "Biceps/Forearms", duration: 60 },
+                    'romanian_deadlift_male': { name: "Romanian Deadlift", angle: "Standing", instructions: "Hinge hips back, keep legs straightish.", key: 'romanian_deadlift_male', muscle: "Hamstrings", duration: 75 },
+                    'lunges_male': { name: "Walking Lunges", angle: "Standing", instructions: "Step forward, drop back knee.", key: 'lunges_male', muscle: "Legs", duration: 75 },
                     'cardio_walk': { name: "Rest / Walk", angle: "N/A", instructions: "Active recovery or rest.", key: 'cardio_walk', muscle: "Cardio", duration: 300 }
                 },
                 protocols: {
                     'Push A': ['incline_db_press', 'seated_shoulder_press', 'overhead_tricep_ext', 'bench_dips', 'flat_db_fly'],
                     'Push B': ['flat_db_press', 'arnold_press', 'skull_crushers', 'incline_db_fly', 'seated_shrugs'],
+                    'Push C': ['seated_shoulder_press', 'incline_db_fly', 'bench_dips', 'seated_shrugs', 'flat_db_press'],
                     'Pull A': ['chest_supported_row', 'incline_bicep_curl', 'spider_curl', 'prone_reverse_fly', 'db_pullover'],
                     'Pull B': ['one_arm_row', 'seated_bicep_curl', 'concentration_curl', 'seated_rear_delt_fly', 'prone_row'],
+                    'Pull C': ['one_arm_row', 'spider_curl', 'prone_reverse_fly', 'db_pullover', 'seated_bicep_curl'],
                     'Legs':   ['bulgarian_split_squat', 'goblet_squat_bench', 'step_ups', 'seated_calf_raise', 'cardio_walk'],
+                    'Legs B': ['step_ups', 'bulgarian_split_squat', 'seated_calf_raise', 'goblet_squat_bench', 'cardio_walk'],
                     'Rest':   ['cardio_walk'] 
                 },
                 defaultSchedule: ['Push A', 'Pull A', 'Legs', 'Push B', 'Pull B', 'Push A', 'Rest']
             },
             woman: {
-                config: { restTime: 30, rounds: 4 }, // Short rest, 4 circuits
+                config: { restTime: 30, rounds: 4, setRestTime: 10 }, // Short rest, 4 circuits
                 assets: [
                     'goblet_squat_female', 'lunges_female', 'kneeling_pushups_female', 'one_arm_row_female', 'overhead_press_female',
                     'pelvic_tilts_female', 'dead_bug_female', 'bird_dog_female', 'glute_bridges_female', 'clamshells_female',
-                    'wall_sit_female', 'scapular_slides_female', 'cat_cow_female', 'childs_pose_female', 'standing_knee_raise_female'
+                    'wall_sit_female', 'scapular_slides_female', 'cat_cow_female', 'childs_pose_female', 'standing_knee_raise_female',
+                    'romanian_deadlift_female', 'donkey_kicks_female', 'superman_female', 'side_lying_leg_lift_female', 'plank_female',
+                    'side_plank_female', 'russian_twists_female', 'jumping_jacks_female', 'mountain_climbers_female', 'step_ups_female', 'squat_jumps_female'
                 ],
                 library: {
                    'goblet_squat_female': { name: "Goblet Squat", angle: "Standing", instructions: "Hold weight at chest, squat down.", key: 'goblet_squat_female', muscle: "Quads/Core", duration: 45 },
@@ -122,6 +132,18 @@
                    'wall_sit_female': { name: "Wall Sit", angle: "Wall", instructions: "Sit against wall, knees at 90°.", key: 'wall_sit_female', muscle: "Quads", duration: 45 },
                    'clamshells_female': { name: "Clamshells", angle: "Floor", instructions: "Side lying, open top knee.", key: 'clamshells_female', muscle: "Hips/Glutes", duration: 45 },
 
+                   'romanian_deadlift_female': { name: "Romanian Deadlift", angle: "Standing", instructions: "Hinge hips back, back straight.", key: 'romanian_deadlift_female', muscle: "Hamstring/Glute", duration: 45 },
+                   'donkey_kicks_female': { name: "Donkey Kicks", angle: "Floor", instructions: "Kick leg back/up.", key: 'donkey_kicks_female', muscle: "Glutes", duration: 45 },
+                   'superman_female': { name: "Superman", angle: "Floor", instructions: "Lift arms and legs.", key: 'superman_female', muscle: "Lower Back", duration: 45 },
+                   'side_lying_leg_lift_female': { name: "Side Leg Lift", angle: "Floor", instructions: "Lift top leg.", key: 'side_lying_leg_lift_female', muscle: "Hips", duration: 45 },
+                   'plank_female': { name: "Plank", angle: "Floor", instructions: "Hold plank position.", key: 'plank_female', muscle: "Core", duration: 60 },
+                   'side_plank_female': { name: "Side Plank", angle: "Floor", instructions: "Hold side plank.", key: 'side_plank_female', muscle: "Obliques", duration: 45 },
+                   'russian_twists_female': { name: "Russian Twists", angle: "Seated", instructions: "Twist torso.", key: 'russian_twists_female', muscle: "Obliques", duration: 45 },
+                   'jumping_jacks_female': { name: "Jumping Jacks", angle: "Standing", instructions: "Jump wide.", key: 'jumping_jacks_female', muscle: "Cardio", duration: 60 },
+                   'mountain_climbers_female': { name: "Mountain Climbers", angle: "Floor", instructions: "Drive knees to chest.", key: 'mountain_climbers_female', muscle: "Cardio", duration: 45 },
+                   'step_ups_female': { name: "Step Ups", angle: "Standing", instructions: "Step up on box.", key: 'step_ups_female', muscle: "Legs", duration: 60 },
+                   'squat_jumps_female': { name: "Squat Jumps", angle: "Standing", instructions: "Squat and jump.", key: 'squat_jumps_female', muscle: "Cardio/Legs", duration: 45 },
+
                    'cardio_walk': { name: "Rest / Walk", angle: "N/A", instructions: "Active recovery or rest.", key: 'cardio_walk', muscle: "Cardio", duration: 300 }
                 },
                 protocols: {
@@ -129,6 +151,9 @@
                     'Cardio Core': ['standing_knee_raise_female', 'bird_dog_female', 'dead_bug_female', 'pelvic_tilts_female', 'cardio_walk'],
                     'Rest Flow': ['cat_cow_female', 'childs_pose_female', 'scapular_slides_female', 'glute_bridges_female', 'cardio_walk'],
                     'Strength B': ['lunges_female', 'wall_sit_female', 'clamshells_female', 'scapular_slides_female', 'kneeling_pushups_female'],
+                    'Strength C': ['romanian_deadlift_female', 'donkey_kicks_female', 'superman_female', 'side_lying_leg_lift_female', 'plank_female'],
+                    'Strength D': ['plank_female', 'side_plank_female', 'russian_twists_female', 'bird_dog_female', 'dead_bug_female'],
+                    'Strength E': ['jumping_jacks_female', 'mountain_climbers_female', 'step_ups_female', 'squat_jumps_female', 'standing_knee_raise_female'],
                     'Active Rec': ['cardio_walk', 'cat_cow_female', 'childs_pose_female'],
                     'Rest': ['cardio_walk']
                 },
