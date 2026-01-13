@@ -36,74 +36,110 @@
     <div id="root"></div>
 
     <script type="text/babel" data-type="module">
-        import React, { useState, useEffect, useRef } from 'react';
+        import React, { useState, useEffect, useRef, useMemo } from 'react';
         import { createRoot } from 'react-dom/client';
         import { 
           Play, Pause, Settings, X, Eye, Loader2, Shuffle,
-          Calendar, Zap, Clock, Dumbbell, Volume2, VolumeX
+          Calendar, Zap, Clock, Dumbbell, Volume2, VolumeX,
+          SkipForward, Activity
         } from 'lucide-react';
 
         // ONE TIME ONLY: Clear assets for new generation batch
-        const availableAssets = [
-            'incline_db_press', 'flat_db_press', 'incline_db_fly', 'flat_db_fly',
-            'seated_shoulder_press', 'chest_supported_row', 'one_arm_row',
-            'incline_bicep_curl', 'seated_bicep_curl', 'skull_crushers',
-            'db_pullover', 'bulgarian_split_squat', 'seated_rear_delt_fly',
-            'step_ups', 'spider_curl', 'overhead_tricep_ext', 'concentration_curl',
-            'bench_dips', 'prone_reverse_fly', 'prone_row', 'single_arm_incline_press',
-            'seated_shrugs', 'goblet_squat_bench', 'seated_calf_raise', 'arnold_press'
-        ]; 
+        const PROFILES = {
+            man: {
+                config: { restTime: 60, rounds: 3 }, // Long rest, 3 sets
+                assets: [
+                    'incline_db_press', 'flat_db_press', 'incline_db_fly', 'flat_db_fly',
+                    'seated_shoulder_press', 'chest_supported_row', 'one_arm_row',
+                    'incline_bicep_curl', 'seated_bicep_curl', 'skull_crushers',
+                    'db_pullover', 'bulgarian_split_squat', 'seated_rear_delt_fly',
+                    'step_ups', 'spider_curl', 'overhead_tricep_ext', 'concentration_curl',
+                    'bench_dips', 'prone_reverse_fly', 'prone_row', 'single_arm_incline_press',
+                    'seated_shrugs', 'goblet_squat_bench', 'seated_calf_raise', 'arnold_press'
+                ],
+                library: {
+                    'incline_db_press': { name: "Incline DB Press", angle: "45° Incline", instructions: "Press DBs up, meeting in center.", key: 'incline_db_press', muscle: "Upper Chest", duration: 75 },
+                    'flat_db_press': { name: "Flat DB Press", angle: "Flat", instructions: "Press vertically from chest level.", key: 'flat_db_press', muscle: "Chest", duration: 75 },
+                    'incline_db_fly': { name: "Incline DB Fly", angle: "45° Incline", instructions: "Wide arc motion for upper chest stretch.", key: 'incline_db_fly', muscle: "Upper Chest", duration: 60 },
+                    'flat_db_fly': { name: "Flat DB Fly", angle: "Flat", instructions: "Open wide, squeeze chest at top.", key: 'flat_db_fly', muscle: "Chest", duration: 60 },
+                    'seated_shoulder_press': { name: "Seated Shoulder Press", angle: "Upright", instructions: "Press DBs overhead.", key: 'seated_shoulder_press', muscle: "Shoulders", duration: 75 },
+                    'chest_supported_row': { name: "Chest Supported Row", angle: "Incline", instructions: "Lie face down, row DBs to hips.", key: 'chest_supported_row', muscle: "Back", duration: 75 },
+                    'one_arm_row': { name: "One Arm Row", angle: "Flat Bench", instructions: "Support on bench, row one side.", key: 'one_arm_row', muscle: "Lats", duration: 75 },
+                    'incline_bicep_curl': { name: "Incline Curl", angle: "45° Incline", instructions: "Arms back, curl with biceps.", key: 'incline_bicep_curl', muscle: "Biceps", duration: 60 },
+                    'seated_bicep_curl': { name: "Seated Curl", angle: "Upright", instructions: "Standard seated bicep curl.", key: 'seated_bicep_curl', muscle: "Biceps", duration: 60 },
+                    'skull_crushers': { name: "DB Skullcrushers", angle: "Flat", instructions: "Lower DBs to ears, extend.", key: 'skull_crushers', muscle: "Triceps", duration: 60 },
+                    'db_pullover': { name: "DB Pullover", angle: "Flat", instructions: "Arc DB behind head.", key: 'db_pullover', muscle: "Lats/Chest", duration: 60 },
+                    'bulgarian_split_squat': { name: "Bulgarian Split Squat", angle: "Standing/Bench", instructions: "One foot back on bench, squat.", key: 'bulgarian_split_squat', muscle: "Quads/Glutes", duration: 90 },
+                    'seated_rear_delt_fly': { name: "Seated Rear Fly", angle: "Seated", instructions: "Hinge forward, fly out to sides.", key: 'seated_rear_delt_fly', muscle: "Rear Delts", duration: 45 },
+                    'step_ups': { name: "Step Ups", angle: "Standing/Bench", instructions: "Step up onto bench.", key: 'step_ups', muscle: "Legs", duration: 90 },
+                    'spider_curl': { name: "Spider Curl", angle: "Incline Prone", instructions: "Prone on incline, curl forward.", key: 'spider_curl', muscle: "Biceps", duration: 60 },
+                    'overhead_tricep_ext': { name: "Overhead Tricep Ext", angle: "Seated", instructions: "DB behind head, extend up.", key: 'overhead_tricep_ext', muscle: "Triceps", duration: 60 },
+                    'concentration_curl': { name: "Concentration Curl", angle: "Seated", instructions: "Elbow on thigh, isolate bicep.", key: 'concentration_curl', muscle: "Biceps", duration: 60 },
+                    'bench_dips': { name: "Bench Dips", angle: "Bench", instructions: "Hands on bench, lower body.", key: 'bench_dips', muscle: "Triceps", duration: 60 },
+                    'prone_reverse_fly': { name: "Prone Reverse Fly", angle: "Incline Prone", instructions: "Face down, fly for rear delts.", key: 'prone_reverse_fly', muscle: "Rear Delts", duration: 60 },
+                    'prone_row': { name: "Prone Row", angle: "Incline Prone", instructions: "Face down, row elbows back.", key: 'prone_row', muscle: "Back", duration: 75 },
+                    'single_arm_incline_press': { name: "1-Arm Incline Press", angle: "Incline", instructions: "Press one side at a time.", key: 'single_arm_incline_press', muscle: "Chest", duration: 60 },
+                    'seated_shrugs': { name: "Seated Shrugs", angle: "Upright", instructions: "Shrug shoulders to ears.", key: 'seated_shrugs', muscle: "Traps", duration: 60 },
+                    'goblet_squat_bench': { name: "Goblet Squat to Bench", angle: "Standing/Bench", instructions: "Squat until touching bench.", key: 'goblet_squat_bench', muscle: "Quads", duration: 90 },
+                    'seated_calf_raise': { name: "Seated Calf Raise", angle: "Seated", instructions: "DBs on knees, raise heels.", key: 'seated_calf_raise', muscle: "Calves", duration: 75 },
+                    'arnold_press': { name: "Arnold Press", angle: "Seated", instructions: "Rotate palms as you press.", key: 'arnold_press', muscle: "Shoulders", duration: 75 },
+                    'cardio_walk': { name: "Rest / Walk", angle: "N/A", instructions: "Active recovery or rest.", key: 'cardio_walk', muscle: "Cardio", duration: 300 }
+                },
+                protocols: {
+                    'Push A': ['incline_db_press', 'seated_shoulder_press', 'overhead_tricep_ext', 'bench_dips', 'flat_db_fly'],
+                    'Push B': ['flat_db_press', 'arnold_press', 'skull_crushers', 'incline_db_fly', 'seated_shrugs'],
+                    'Pull A': ['chest_supported_row', 'incline_bicep_curl', 'spider_curl', 'prone_reverse_fly', 'db_pullover'],
+                    'Pull B': ['one_arm_row', 'seated_bicep_curl', 'concentration_curl', 'seated_rear_delt_fly', 'prone_row'],
+                    'Legs':   ['bulgarian_split_squat', 'goblet_squat_bench', 'step_ups', 'seated_calf_raise', 'cardio_walk'],
+                    'Rest':   ['cardio_walk'] 
+                },
+                defaultSchedule: ['Push A', 'Pull A', 'Legs', 'Push B', 'Pull B', 'Push A', 'Rest']
+            },
+            woman: {
+                config: { restTime: 30, rounds: 4 }, // Short rest, 4 circuits
+                assets: [
+                    'goblet_squat_female', 'lunges_female', 'kneeling_pushups_female', 'one_arm_row_female', 'overhead_press_female',
+                    'pelvic_tilts_female', 'dead_bug_female', 'bird_dog_female', 'glute_bridges_female', 'clamshells_female',
+                    'wall_sit_female', 'scapular_slides_female', 'cat_cow_female', 'childs_pose_female', 'standing_knee_raise_female'
+                ],
+                library: {
+                   'goblet_squat_female': { name: "Goblet Squat", angle: "Standing", instructions: "Hold weight at chest, squat down.", key: 'goblet_squat_female', muscle: "Quads/Core", duration: 45 },
+                   'kneeling_pushups_female': { name: "Modified Pushups", angle: "Floor", instructions: "Knees on mat, keep back straight.", key: 'kneeling_pushups_female', muscle: "Chest/Core", duration: 45 },
+                   'one_arm_row_female': { name: "One Arm Row", angle: "Bench", instructions: "Support on bench, row weight to hip.", key: 'one_arm_row_female', muscle: "Back", duration: 45 },
+                   'overhead_press_female': { name: "Seated Press", angle: "Seated", instructions: "Press weights overhead, core tight.", key: 'overhead_press_female', muscle: "Shoulders", duration: 45 },
+                   'glute_bridges_female': { name: "Glute Bridges", angle: "Floor", instructions: "Lift hips, squeeze glutes at top.", key: 'glute_bridges_female', muscle: "Glutes/Core", duration: 45 },
+                   
+                   'standing_knee_raise_female': { name: "High Knees", angle: "Standing", instructions: "March in place, lifting knees high.", key: 'standing_knee_raise_female', muscle: "Cardio", duration: 60 },
+                   'bird_dog_female': { name: "Bird Dog", angle: "Floor", instructions: "Extend opposite arm and leg.", key: 'bird_dog_female', muscle: "Core Stability", duration: 45 },
+                   'dead_bug_female': { name: "Dead Bug", angle: "Floor", instructions: "Lower opposite arm/leg, keep back flat.", key: 'dead_bug_female', muscle: "Deep Core", duration: 45 },
+                   'pelvic_tilts_female': { name: "Pelvic Tilts", angle: "Floor", instructions: "Tilt pelvis to flatten lower back.", key: 'pelvic_tilts_female', muscle: "Core", duration: 45 },
+                   
+                   'cat_cow_female': { name: "Cat Cow", angle: "Floor", instructions: "Arch and round spine gently.", key: 'cat_cow_female', muscle: "Mobility", duration: 60 },
+                   'childs_pose_female': { name: "Child's Pose", angle: "Floor", instructions: "Sit back on heels, reach forward.", key: 'childs_pose_female', muscle: "Stretch", duration: 60 },
+                   'scapular_slides_female': { name: "Wall Slides", angle: "Wall", instructions: "Back to wall, slide arms in 'W'.", key: 'scapular_slides_female', muscle: "Posture", duration: 45 },
+                   
+                   'lunges_female': { name: "Walking Lunges", angle: "Standing", instructions: "Step forward, lower back knee.", key: 'lunges_female', muscle: "Legs", duration: 45 },
+                   'wall_sit_female': { name: "Wall Sit", angle: "Wall", instructions: "Sit against wall, knees at 90°.", key: 'wall_sit_female', muscle: "Quads", duration: 45 },
+                   'clamshells_female': { name: "Clamshells", angle: "Floor", instructions: "Side lying, open top knee.", key: 'clamshells_female', muscle: "Hips/Glutes", duration: 45 },
 
-
-        const exerciseLibrary = {
-          'incline_db_press': { name: "Incline DB Press", angle: "45° Incline", instructions: "Press DBs up, meeting in center.", key: 'incline_db_press', muscle: "Upper Chest", duration: 600 },
-          'flat_db_press': { name: "Flat DB Press", angle: "Flat", instructions: "Press vertically from chest level.", key: 'flat_db_press', muscle: "Chest", duration: 600 },
-          'incline_db_fly': { name: "Incline DB Fly", angle: "45° Incline", instructions: "Wide arc motion for upper chest stretch.", key: 'incline_db_fly', muscle: "Upper Chest", duration: 450 },
-          'flat_db_fly': { name: "Flat DB Fly", angle: "Flat", instructions: "Open wide, squeeze chest at top.", key: 'flat_db_fly', muscle: "Chest", duration: 450 },
-          'seated_shoulder_press': { name: "Seated Shoulder Press", angle: "Upright", instructions: "Press DBs overhead.", key: 'seated_shoulder_press', muscle: "Shoulders", duration: 450 },
-          'chest_supported_row': { name: "Chest Supported Row", angle: "Incline", instructions: "Lie face down, row DBs to hips.", key: 'chest_supported_row', muscle: "Back", duration: 450 },
-          'one_arm_row': { name: "One Arm Row", angle: "Flat Bench", instructions: "Support on bench, row one side.", key: 'one_arm_row', muscle: "Lats", duration: 450 },
-          'incline_bicep_curl': { name: "Incline Curl", angle: "45° Incline", instructions: "Arms back, curl with biceps.", key: 'incline_bicep_curl', muscle: "Biceps", duration: 450 },
-          'seated_bicep_curl': { name: "Seated Curl", angle: "Upright", instructions: "Standard seated bicep curl.", key: 'seated_bicep_curl', muscle: "Biceps", duration: 450 },
-          'skull_crushers': { name: "DB Skullcrushers", angle: "Flat", instructions: "Lower DBs to ears, extend.", key: 'skull_crushers', muscle: "Triceps", duration: 300 },
-          'db_pullover': { name: "DB Pullover", angle: "Flat", instructions: "Arc DB behind head.", key: 'db_pullover', muscle: "Lats/Chest", duration: 450 },
-          'bulgarian_split_squat': { name: "Bulgarian Split Squat", angle: "Standing/Bench", instructions: "One foot back on bench, squat.", key: 'bulgarian_split_squat', muscle: "Quads/Glutes", duration: 600 },
-          'seated_rear_delt_fly': { name: "Seated Rear Fly", angle: "Seated", instructions: "Hinge forward, fly out to sides.", key: 'seated_rear_delt_fly', muscle: "Rear Delts", duration: 300 },
-          'step_ups': { name: "Step Ups", angle: "Standing/Bench", instructions: "Step up onto bench.", key: 'step_ups', muscle: "Legs", duration: 600 },
-          'spider_curl': { name: "Spider Curl", angle: "Incline Prone", instructions: "Prone on incline, curl forward.", key: 'spider_curl', muscle: "Biceps", duration: 450 },
-          'overhead_tricep_ext': { name: "Overhead Tricep Ext", angle: "Seated", instructions: "DB behind head, extend up.", key: 'overhead_tricep_ext', muscle: "Triceps", duration: 300 },
-          'concentration_curl': { name: "Concentration Curl", angle: "Seated", instructions: "Elbow on thigh, isolate bicep.", key: 'concentration_curl', muscle: "Biceps", duration: 450 },
-          'bench_dips': { name: "Bench Dips", angle: "Bench", instructions: "Hands on bench, lower body.", key: 'bench_dips', muscle: "Triceps", duration: 300 },
-          'prone_reverse_fly': { name: "Prone Reverse Fly", angle: "Incline Prone", instructions: "Face down, fly for rear delts.", key: 'prone_reverse_fly', muscle: "Rear Delts", duration: 300 },
-          'prone_row': { name: "Prone Row", angle: "Incline Prone", instructions: "Face down, row elbows back.", key: 'prone_row', muscle: "Back", duration: 450 },
-          'single_arm_incline_press': { name: "1-Arm Incline Press", angle: "Incline", instructions: "Press one side at a time.", key: 'single_arm_incline_press', muscle: "Chest", duration: 450 },
-          'seated_shrugs': { name: "Seated Shrugs", angle: "Upright", instructions: "Shrug shoulders to ears.", key: 'seated_shrugs', muscle: "Traps", duration: 300 },
-          'goblet_squat_bench': { name: "Goblet Squat to Bench", angle: "Standing/Bench", instructions: "Squat until touching bench.", key: 'goblet_squat_bench', muscle: "Quads", duration: 600 },
-          'seated_calf_raise': { name: "Seated Calf Raise", angle: "Seated", instructions: "DBs on knees, raise heels.", key: 'seated_calf_raise', muscle: "Calves", duration: 300 },
-          'arnold_press': { name: "Arnold Press", angle: "Seated", instructions: "Rotate palms as you press.", key: 'arnold_press', muscle: "Shoulders", duration: 450 },
-          'cardio_walk': {
-             name: "Rest / Walk",
-             angle: "N/A",
-             instructions: "Active recovery or rest.",
-             key: 'cardio_walk',
-             muscle: "Cardio",
-             duration: 300
-          }
+                   'cardio_walk': { name: "Rest / Walk", angle: "N/A", instructions: "Active recovery or rest.", key: 'cardio_walk', muscle: "Cardio", duration: 300 }
+                },
+                protocols: {
+                    'Strength A': ['goblet_squat_female', 'kneeling_pushups_female', 'one_arm_row_female', 'overhead_press_female', 'glute_bridges_female'],
+                    'Cardio Core': ['standing_knee_raise_female', 'bird_dog_female', 'dead_bug_female', 'pelvic_tilts_female', 'cardio_walk'],
+                    'Rest Flow': ['cat_cow_female', 'childs_pose_female', 'scapular_slides_female', 'glute_bridges_female', 'cardio_walk'],
+                    'Strength B': ['lunges_female', 'wall_sit_female', 'clamshells_female', 'scapular_slides_female', 'kneeling_pushups_female'],
+                    'Active Rec': ['cardio_walk', 'cat_cow_female', 'childs_pose_female'],
+                    'Rest': ['cardio_walk']
+                },
+                defaultSchedule: ['Strength A', 'Cardio Core', 'Rest Flow', 'Strength B', 'Cardio Core', 'Active Rec', 'Rest']
+            }
         };
 
-        const protocols = {
-          'Push A': ['incline_db_press', 'seated_shoulder_press', 'overhead_tricep_ext', 'bench_dips', 'flat_db_fly'],
-          'Push B': ['flat_db_press', 'arnold_press', 'skull_crushers', 'incline_db_fly', 'seated_shrugs'],
-          'Pull A': ['chest_supported_row', 'incline_bicep_curl', 'spider_curl', 'prone_reverse_fly', 'db_pullover'],
-          'Pull B': ['one_arm_row', 'seated_bicep_curl', 'concentration_curl', 'seated_rear_delt_fly', 'prone_row'],
-          'Legs':   ['bulgarian_split_squat', 'goblet_squat_bench', 'step_ups', 'seated_calf_raise', 'cardio_walk'],
-          'Rest':   ['cardio_walk'] 
-        };
+        function ExerciseVisual({ exerciseKey, assets }) {
+            const hasAsset = assets.includes(exerciseKey);
 
-        function ExerciseVisual({ exerciseKey }) {
-            const hasAsset = availableAssets.includes(exerciseKey);
-
-            if (!availableAssets.includes(exerciseKey) && exerciseKey !== 'cardio_walk') {
+            if (!hasAsset && exerciseKey !== 'cardio_walk') {
                return (
                  <div className="w-full h-full bg-zinc-900 flex flex-col items-center justify-center text-zinc-600 font-mono gap-2 p-4 text-center relative">
                     <Loader2 className="animate-spin" />
@@ -124,12 +160,30 @@
                 );
             }
 
+            const isFemale = exerciseKey.includes('female');
+            // Hacky way to detect file extension, assuming new ones are .png from generation tool usually, 
+            // but the original code used .jpg. Let's support both or standardized. 
+            // The generated files are .png. The old files were .jpg
+            // Implementation: We will use a function or try/catch. Or simpler:
+            // Since I know which are which:
+            const ext = isFemale ? 'png' : 'jpg';
+            // Actually, the original code had .jpg. The new artifacts are .png. 
+            // Better to just support png for new ones.
+
             return (
                 <div className="relative w-full h-full flex items-center justify-center bg-black overflow-hidden group">
                      <div className="w-full h-full flex items-center justify-center p-8">
                           <img 
-                             src={`assets/infographics/${exerciseKey}.jpg`} 
-                             onError={(e) => {e.target.style.display='none'; e.target.parentNode.innerText='INFOGRAPHIC MISSING'}}
+                             src={`assets/infographics/${exerciseKey}.${ext}`} 
+                             onError={(e) => {
+                                 // Fallback to other extension if needed or show error
+                                 if (e.target.src.endsWith('.png')) {
+                                     e.target.src = e.target.src.replace('.png', '.jpg');
+                                 } else {
+                                     e.target.style.display='none'; 
+                                     e.target.parentNode.innerText='INFOGRAPHIC MISSING';
+                                 }
+                             }}
                              className="w-full h-full object-contain border border-lime-500/30 rounded-lg shadow-[0_0_30px_-10px_rgba(132,204,22,0.3)]" 
                              alt="Infographic"
                           />
@@ -140,24 +194,64 @@
 
         function App() {
           const [dayIdx] = useState(new Date().getDay());
-          const [schedule, setSchedule] = useState(() => {
-            const saved = localStorage.getItem('mundane_fitness_v5'); 
-            return saved ? JSON.parse(saved) : ['Push A', 'Pull A', 'Legs', 'Push B', 'Pull B', 'Push A', 'Rest'];
+          
+          // Profile State
+          const [userProfile, setUserProfile] = useState(() => {
+              return localStorage.getItem('mundane_fitness_profile') || 'man';
           });
+
+          // Derived Data based on Profile
+          const activeProfileData = PROFILES[userProfile];
+          const protocols = activeProfileData.protocols;
+          const exerciseLibrary = activeProfileData.library;
+          const availableAssets = activeProfileData.assets;
+          const activeConfig = activeProfileData.config || { restTime: 45, rounds: 1 }; // Default if missing
+
+          const [schedule, setSchedule] = useState(() => {
+            const saved = localStorage.getItem(`mundane_fitness_schedule_${userProfile}`); 
+            return saved ? JSON.parse(saved) : activeProfileData.defaultSchedule;
+          });
+
+          // Reset schedule if profile changes
+          useEffect(() => {
+              const saved = localStorage.getItem(`mundane_fitness_schedule_${userProfile}`);
+              if (saved) {
+                  setSchedule(JSON.parse(saved));
+              } else {
+                  setSchedule(activeProfileData.defaultSchedule);
+              }
+          }, [userProfile]);
+
+
 
           const [forceProtocol, setForceProtocol] = useState(null);
           const activeProtocolType = forceProtocol || schedule[dayIdx];
-          const activeRoutineKeys = protocols[activeProtocolType] || protocols['Rest'];
           
-          const REST_DURATION = 45; // 45 seconds rest
+          // GENERATE ROUTINE LIST WITH ROUNDS
+          const baseRoutineKeys = protocols[activeProtocolType] || protocols['Rest'];
+          
+          // Flatten routine based on rounds (Except for Rest which is 1 round)
+          const activeRoutineKeys = useMemo(() => {
+               // Straight Sets: Return unique exercises. Logic handles sets.
+               return baseRoutineKeys || [];
+          }, [baseRoutineKeys]);
+
+          
+          const TARGET_ROUNDS = activeConfig.rounds || 1;
+          const EXERCISE_REST = activeConfig.restTime || 60;
+          const SET_REST = activeConfig.setRestTime || 10;
+          const REST_DURATION = EXERCISE_REST; // Fallback ref
 
           const [currentStep, setCurrentStep] = useState(0);
+          const [currentSet, setCurrentSet] = useState(0);
+          const [phase, setPhase] = useState('WORK'); // 'WORK', 'REST_SET', 'REST_EXERCISE'
+          
           const [timeLeft, setTimeLeft] = useState(0);
           const [isRunning, setIsRunning] = useState(false);
-          const [isResting, setIsResting] = useState(false); // New Rest State
+          const [isResting, setIsResting] = useState(false); 
           const [showSettings, setShowSettings] = useState(false);
 
-          const [isMuted, setIsMuted] = useState(false); // Music Mute State
+          const [isMuted, setIsMuted] = useState(false);
           const audioRef = useRef(null); 
           
           // Ensure voices are loaded and pick English
@@ -269,51 +363,77 @@
           }, []);
 
           // Main Timer Loop
+
+          // Helper for current exercise duration
+          useEffect(() => {
+              if (phase === 'WORK' && !isRunning && timeLeft === 0) {
+                  // Initialize time for new step/set
+                  const key = activeRoutineKeys[currentStep];
+                  if (key) {
+                      setTimeLeft(exerciseLibrary[key]?.duration || 45);
+                  }
+              }
+          }, [currentStep, phase, activeRoutineKeys, isRunning]);
+
+          // Main Timer Loop
           useEffect(() => {
             let interval = null;
             if (isRunning && timeLeft > 0) {
               interval = setInterval(() => {
                   setTimeLeft(prev => {
                       const newValue = prev - 1;
-                      
-                      // Speech Logic
-                      if (newValue === 3 || newValue === 2 || newValue === 1) {
-                         const words = {3: "Three", 2: "Two", 1: "One"};
-                         speak(words[newValue]);
-                      }
-                      
+                      if ([3, 2, 1].includes(newValue)) speak(["One", "Two", "Three"][3 - newValue]);
                       return newValue;
                   });
               }, 1000);
             } else if (timeLeft === 0 && isRunning) {
-               // Timer Hit Zero
-               if (!isResting) {
-                   // End of Workout -> Go to Rest
-                   if (currentStep < activeRoutineKeys.length - 1) {
-                        const nextKey = activeRoutineKeys[currentStep + 1];
-                        const nextEx = exerciseLibrary[nextKey];
-                        
-                        setIsResting(true);
-                        setTimeLeft(REST_DURATION);
-                        // Speak Next Exercise Details NOW (Start of Rest)
-                        speak(`Rest. Next up is ${nextEx.name}. ${nextEx.instructions}`);
+               // PHASE TRANSITION LOGIC
+               if (phase === 'WORK') {
+                   playBeep();
+                   if (currentSet < TARGET_ROUNDS - 1) {
+                       // Go to SET REST
+                       setPhase('REST_SET');
+                       setIsResting(true);
+                       setTimeLeft(SET_REST);
+                       speak("Rest.");
                    } else {
-                       finishWorkout();
+                       // Done with all sets -> Go to EXERCISE REST (or Finish)
+                       if (currentStep < activeRoutineKeys.length - 1) {
+                           setPhase('REST_EXERCISE');
+                           setIsResting(true);
+                           setTimeLeft(EXERCISE_REST);
+                           const nextName = exerciseLibrary[activeRoutineKeys[currentStep + 1]]?.name || "Next Exercise";
+                           speak(`Exercise usage complete. Recover. Next up: ${nextName}`);
+                       } else {
+                           finishWorkout();
+                       }
                    }
-               } else {
-                   // End of Rest -> Go to Next Workout
-                   speak("Begin.");
+               } else if (phase === 'REST_SET') {
+                   // Back to Work (Next Set)
+                   playBeep();
+                   setCurrentSet(prev => prev + 1);
+                   setPhase('WORK');
                    setIsResting(false);
+                   const exDuration = exerciseLibrary[activeRoutineKeys[currentStep]]?.duration || 45;
+                   setTimeLeft(exDuration);
+                   speak(`Set ${currentSet + 2}`);
+               } else if (phase === 'REST_EXERCISE') {
+                   // Next Exercise
+                   playBeep();
                    setCurrentStep(prev => prev + 1);
+                   setCurrentSet(0);
+                   setPhase('WORK');
+                   setIsResting(false);
                    const nextKey = activeRoutineKeys[currentStep + 1];
                    if (nextKey) {
-                       const nextEx = exerciseLibrary[nextKey];
-                       setTimeLeft(nextEx.duration);
+                       const ex = exerciseLibrary[nextKey];
+                       setTimeLeft(ex.duration);
+                       speak(ex.name);
                    }
                }
             }
             return () => clearInterval(interval);
-          }, [isRunning, timeLeft, isResting, currentStep, activeRoutineKeys]);
+          }, [isRunning, timeLeft, phase, currentSet, currentStep, TARGET_ROUNDS, activeRoutineKeys]);
 
           const finishWorkout = () => {
               setIsRunning(false);
@@ -528,246 +648,248 @@
                 ref={audioRef} 
                 onEnded={nextTrack}
               />
-              
-              <nav className="p-4 md:p-6 border-b border-zinc-900 flex justify-between items-center bg-[#050505]/95 z-20 shrink-0">
-                <div>
-                  <h1 className="text-xl md:text-2xl font-black italic text-lime-400 tracking-tighter">MUNDANE FITNESS</h1>
-                  <div className="flex items-center gap-2 text-[10px] font-mono text-zinc-500 uppercase tracking-widest mt-1">
-                    <Calendar size={12} className="text-zinc-700" />
-                    {['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][dayIdx]} // {activeProtocolType}
-                  </div>
+
+              {/* TOP NAV */}
+              <div className="flex items-center justify-between px-6 py-4 border-b border-white/10 shrink-0 bg-[#050505]/90 backdrop-blur z-20">
+                <div className="flex items-center gap-4">
+                  <Dumbbell className="text-lime-500 w-6 h-6" />
+                  <h1 className="text-xl font-bold tracking-tight bg-gradient-to-r from-lime-400 to-lime-600 bg-clip-text text-transparent">
+                    MUNDANE FITNESS
+                  </h1>
                 </div>
                 
                 <div className="flex items-center gap-4">
-                     {/* Shuffle Button */}
-                     <div onClick={shuffleRoutine} className="p-2 bg-zinc-900 rounded-full cursor-pointer hover:bg-zinc-800 transition" title="Shuffle Routine">
-                         <Shuffle size={18} className="text-lime-500" />
+                     {/* PROFILE SELECTOR */}
+                     <div className="flex items-center bg-zinc-900 rounded-lg p-1 border border-zinc-800">
+                        <button 
+                           onClick={() => setUserProfile('man')}
+                           className={`px-3 py-1 text-xs font-mono transition-colors rounded-md ${userProfile === 'man' ? 'bg-lime-500/20 text-lime-400 border border-lime-500/50' : 'text-zinc-500 hover:text-zinc-300'}`}
+                        >
+                           MAN
+                        </button>
+                        <button 
+                           onClick={() => setUserProfile('woman')}
+                           className={`px-3 py-1 text-xs font-mono transition-colors rounded-md ${userProfile === 'woman' ? 'bg-lime-500/20 text-lime-400 border border-lime-500/50' : 'text-zinc-500 hover:text-zinc-300'}`}
+                        >
+                           WOMAN
+                        </button>
                      </div>
+                     
+                     <button 
+                        onClick={shuffleRoutine}
+                        className="p-2 bg-zinc-900 border border-zinc-800 rounded-lg text-zinc-400 hover:text-white hover:border-lime-500/50 transition-all"
+                        title="Shuffle Routine"
+                     >
+                        <Shuffle className="w-5 h-5" />
+                     </button>
 
-                     {/* Music Info */}
-                     <div onClick={nextTrack} className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-zinc-900 rounded-full cursor-pointer hover:bg-zinc-800 border border-zinc-800 group">
-                        <div className={`w-2 h-2 rounded-full ${isRunning && !isMuted ? 'bg-lime-500 animate-pulse' : 'bg-zinc-600'}`}></div>
-                        <div className="flex flex-col leading-none">
-                            <span className="text-[10px] font-bold text-white max-w-[100px] truncate">{playlist[currentTrackIdx].title}</span>
-                            <span className="text-[8px] text-zinc-500 max-w-[100px] truncate">{playlist[currentTrackIdx].artist}</span>
-                        </div>
-                        <Play size={10} className="text-zinc-500 ml-1 opacity-0 group-hover:opacity-100 transition-opacity" />
-                     </div>
-
-                     {/* Volume Toggle */}
-                    <div onClick={() => setIsMuted(!isMuted)} className="p-2 bg-zinc-900 rounded-full cursor-pointer hover:bg-zinc-800 transition" title={isMuted ? "Unmute Music" : "Mute Music"}>
-                        {isMuted ? <VolumeX size={18} className="text-zinc-600" /> : <Volume2 size={18} className="text-lime-500" />}
-                    </div>
-
-                    <div onClick={() => setShowSettings(true)} className="p-2 bg-zinc-900 rounded-full cursor-pointer hover:bg-zinc-800 transition">
-                        <Settings size={18} />
-                    </div>
+                     <button onClick={() => setShowSettings(true)} className="p-2 hover:bg-zinc-900 rounded-lg text-zinc-400 hover:text-white transition-colors">
+                        <Settings className="w-5 h-5" />
+                     </button>
                 </div>
-              </nav>
+              </div>
 
-              <main className="flex-1 overflow-y-auto p-4 md:p-6 bg-[#050505]">
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-full">
-                  
-                  <div className="lg:col-span-8 flex flex-col gap-6">
-                    <div className="flex-1 bg-zinc-950 rounded-[2rem] border border-zinc-900 overflow-hidden relative flex flex-col md:flex-row shadow-2xl">
-                        {/* Time Display: Relative/Block on Mobile (Top), Absolute on Desktop */}
-                        <div className="w-full lg:w-auto bg-zinc-950/50 p-4 md:p-0 flex flex-col items-center justify-center md:block md:bg-transparent md:absolute md:top-6 md:right-6 md:z-10 md:text-right border-b border-zinc-900 md:border-0">
-                           <div className={`text-6xl md:text-8xl font-black tabular-nums tracking-tighter drop-shadow-xl md:mix-blend-difference ${isResting ? 'text-lime-400' : 'text-white'}`}>
-                             {formatTime(timeLeft)}
-                           </div>
-                           {isResting && <div className="text-lime-500 font-black uppercase tracking-widest text-sm animate-pulse">RESTING</div>}
+              {/* MAIN CONTENT GRID */}
+              <div className="flex-1 flex overflow-hidden">
+                
+                {/* LEFT: VISUAL & TIMER */}
+                <div className="flex-[3] relative border-r border-white/10 flex flex-col overflow-hidden">
+                   {/* EXERCISE VISUAL */}
+                   <div className="flex-1 relative overflow-hidden bg-gradient-to-br from-zinc-900 via-black to-zinc-900 flex items-center justify-center p-8">
+                      {/* BG Grid */}
+                      <div className="absolute inset-0 bg-[linear-gradient(rgba(20,20,20,0.5)_1px,transparent_1px),linear-gradient(90deg,rgba(20,20,20,0.5)_1px,transparent_1px)] bg-[size:40px_40px] opacity-20 pointer-events-none"></div>
+                      
+                      {/* Main Visual */}
+                      <div className="w-full max-w-2xl h-[60vh] relative z-10 transition-all duration-500">
+                          <ExerciseVisual exerciseKey={currentKey} assets={availableAssets} />
+                      </div>
+
+                      {/* REST OVERLAY */}
+                      {isResting && (
+                          <div className="absolute inset-0 bg-black/80 backdrop-blur-sm z-20 flex items-center justify-center">
+                              <div className="flex flex-col items-center gap-6 animate-in fade-in zoom-in duration-300">
+                                  <Clock className="w-20 h-20 text-lime-500 animate-pulse" />
+                                  <div className="text-center">
+                                      <h2 className="text-4xl font-black text-white mb-2">
+                                          {phase === 'REST_SET' ? 'REST' : 'RECOVER'}
+                                      </h2>
+                                      <p className="text-zinc-400 font-mono text-lg">
+                                          {phase === 'REST_SET' ? 'Brief Pause' : 'Next Exercise Coming Up'}
+                                      </p>
+                                  </div>
+                                  <div className="text-8xl font-black font-mono text-lime-400 tabular-nums">
+                                      {timeLeft}
+                                  </div>
+                              </div>
+                          </div>
+                      )}
+                   </div>
+
+                   {/* BOTTOM CONTROL BAR */}
+                   <div className="min-h-32 border-t border-white/10 bg-zinc-900/50 backdrop-blur flex items-center px-6 lg:px-10 gap-6 lg:gap-10 shrink-0">
+                       
+                       {/* Play/Pause */}
+                       <button 
+                         onClick={toggleWorkout}
+                         className={`w-16 h-16 lg:w-20 lg:h-20 flex items-center justify-center rounded-full transition-all shadow-xl hover:scale-105 active:scale-95 shrink-0 ${
+                             isRunning 
+                             ? 'bg-zinc-800 text-red-400 hover:bg-zinc-700 border-2 border-red-500/20' 
+                             : 'bg-lime-500 text-black hover:bg-lime-400 shadow-[0_0_40px_-10px_rgba(132,204,22,0.5)]'
+                         }`}
+                       >
+                           {isRunning ? <Pause className="w-6 h-6 lg:w-8 lg:h-8 fill-current" /> : <Play className="w-6 h-6 lg:w-8 lg:h-8 fill-current ml-1" />}
+                       </button>
+
+                       {/* Time & Sets Info */}
+                       <div className="flex-1 flex justify-between items-center bg-black/40 rounded-2xl p-4 lg:p-6 border border-white/5 overflow-hidden">
                            
-                           {/* Seek Slider */}
-                           <input 
-                              type="range"
-                              min="0"
-                              max={isResting ? REST_DURATION : (currentEx.duration)}
-                              value={timeLeft}
-                              onChange={(e) => setTimeLeft(parseInt(e.target.value))}
-                              className="w-full md:w-32 lg:w-48 mt-2 accent-lime-500 bg-zinc-800 h-1 rounded-full appearance-none cursor-pointer opacity-50 hover:opacity-100 transition-opacity"
-                              dir="rtl" 
-                           />
-                        </div>
+                           <div className="flex flex-col gap-1 min-w-0">
+                               <div className="flex items-center gap-3">
+                                   <span className="text-[10px] lg:text-xs font-mono text-lime-500 uppercase tracking-widest bg-lime-500/10 px-2 py-1 rounded whitespace-nowrap">
+                                       {activeProtocolType}
+                                   </span>
+                                   {isResting && (
+                                       <span className="text-[10px] lg:text-xs font-mono text-amber-500 uppercase tracking-widest bg-amber-500/10 px-2 py-1 rounded whitespace-nowrap">
+                                           {phase === 'REST_SET' ? 'SET BREAK' : 'REST'}
+                                       </span>
+                                   )}
+                               </div>
+                               <h2 className="text-xl lg:text-3xl font-bold truncate text-white max-w-[150px] lg:max-w-md">
+                                   {currentEx.name}
+                               </h2>
+                           </div>
 
-                        <div className="flex-[3] bg-black flex items-center justify-center relative border-b md:border-b-0 md:border-r border-zinc-900 min-h-[50vh]">
-                            {isResting ? (
-                                <div className="flex flex-col items-center justify-center p-8 text-center max-w-sm">
-                                    <div className="mb-4 p-4 bg-zinc-900/50 rounded-full">
-                                      <Clock size={48} className="text-lime-500 animate-pulse" />
-                                    </div>
-                                    <h2 className="text-2xl font-black italic text-white mb-2">REST & RECOVER</h2>
-                                    {nextExDisplay && (
-                                        <div className="mt-4 p-4 border border-zinc-800 rounded-xl bg-zinc-950/50">
-                                            <div className="text-[10px] uppercase text-zinc-500 tracking-widest mb-1">Coming Up Next</div>
-                                            <div className="text-lime-400 font-bold text-lg">{nextExDisplay.name}</div>
-                                            <div className="text-zinc-500 text-xs mt-1">{nextExDisplay.instructions}</div>
-                                        </div>
-                                    )}
-                                </div>
-                            ) : (
-                                <ExerciseVisual exerciseKey={currentEx.key} />
-                            )}
-                        </div>
+                           {/* SET COUNTER */}
+                           <div className="flex flex-col items-center px-4 lg:px-6 border-l border-r border-white/10 hidden md:flex">
+                               <div className="text-[10px] lg:text-xs text-zinc-500 uppercase tracking-wider font-mono mb-1">SET</div>
+                               <div className="text-2xl lg:text-3xl font-black font-mono text-white">
+                                   {currentSet + 1}<span className="text-zinc-600 text-lg lg:text-xl font-medium">/{TARGET_ROUNDS}</span>
+                               </div>
+                           </div>
 
-                        <div className="flex-1 p-6 flex flex-col justify-end gap-2 bg-zinc-950/80 backdrop-blur-sm border-t border-zinc-900">
-                            <div>
-                                <span className="bg-lime-500 text-black px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wide">{currentEx.muscle}</span>
-                                <h2 className="text-2xl md:text-4xl font-black italic uppercase leading-none mt-2 text-white">{currentEx.name}</h2>
-                            </div>
-                            
-                            <div className="flex justify-between items-end">
-                                <p className="text-zinc-400 text-xs leading-relaxed max-w-md line-clamp-2 md:line-clamp-none">
-                                    {currentEx.instructions}
-                                </p>
-                            </div>
+                           {/* TIMER */}
+                           <div className="flex flex-col items-end min-w-[80px] lg:min-w-[120px]">
+                               <div className="text-[10px] lg:text-xs text-zinc-500 uppercase tracking-wider font-mono mb-1">TIME</div>
+                               <div className={`text-3xl lg:text-5xl font-black font-mono tracking-tighter tabular-nums ${timeLeft <= 5 && isRunning ? 'text-red-500 animate-pulse' : 'text-lime-400'}`}>
+                                   {formatTime(timeLeft)}
+                               </div>
+                           </div>
+                       </div>
 
-                            <div className="mt-2 flex gap-2">
-                                <button onClick={handleStepComplete} className="flex-1 py-3 bg-white text-black font-black italic rounded-lg hover:bg-zinc-200 transition-colors flex items-center justify-center gap-2">
-                                     DONE <span className="text-xs not-italic text-zinc-400">({currentStep + 1}/{activeRoutineKeys.length})</span>
-                                </button>
-                                <button onClick={() => setIsRunning(!isRunning)} className={`p-3 rounded-lg font-bold transition-colors ${isRunning ? 'bg-zinc-800 text-zinc-400' : 'bg-lime-500 text-black'}`}>
-                                    {isRunning ? <Pause size={20} /> : <Play size={20} />}
-                                </button>
-                                <button onClick={skipStep} className="p-3 bg-zinc-800 text-white rounded-lg hover:bg-zinc-700 transition">
-                                    <div className="flex items-center"><Play size={12} className="fill-current" /><Play size={12} className="fill-current -ml-1" /></div>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="flex gap-4">
-                        <button 
-                          onClick={toggleWorkout}
-                          className={`flex-1 py-6 md:py-8 rounded-[2rem] text-2xl font-black flex items-center justify-center gap-4 transition-all active:scale-95 ${isRunning ? 'bg-zinc-900 text-zinc-400 ring-2 ring-inset ring-zinc-800' : 'bg-lime-500 text-black shadow-[0_0_50px_-15px_rgba(132,204,22,0.5)]'}`}
-                        >
-                          {isRunning ? <Pause size={32} fill="currentColor" /> : <Play size={32} fill="currentColor" />}
-                          {isRunning ? 'PAUSE' : 'START SESSION'}
-                        </button>
-                        
-                        <button 
-                            onClick={skipStep}
-                            className="w-24 md:w-32 rounded-[2rem] bg-zinc-900 border border-zinc-800 flex items-center justify-center hover:bg-zinc-800 active:scale-95 transition-all group"
-                        >
-                            <div className="flex flex-col items-center gap-1">
-                                <span className="text-zinc-500 group-hover:text-white"><Play size={24} fill="currentColor" className="ml-1" /></span>
-                                <span className="text-[10px] font-bold uppercase text-zinc-600 tracking-widest">{isResting ? 'Start' : 'Skip'}</span>
-                            </div>
-                        </button>
-                    </div>
-                  </div>
-
-                  {/* Up Next List */}
-                  <div className="lg:col-span-4 bg-zinc-950 border border-zinc-900 rounded-[2rem] p-6 overflow-y-auto">
-                    <h3 className="text-zinc-600 font-black uppercase tracking-widest text-xs mb-4 flex gap-2 items-center">
-                        <Zap size={14} /> Workout Structure
-                    </h3>
-                    <div className="space-y-2">
-                        {activeRoutineKeys.map((key, i) => {
-                          const ex = exerciseLibrary[key];
-                          const isActive = i === currentStep;
-                          const isDone = i < currentStep;
-
-                          if (!ex) return null;
-                            
-                          // Correct Time Formatting for List
-                          const durationStr = `${Math.floor(ex.duration / 60)}:${(ex.duration % 60).toString().padStart(2, '0')}`;
-
-                          return (
-                            <div 
-                              key={key + i}
-                              onClick={() => handlePreview(i)}
-                              className={`w-full text-left p-4 rounded-xl flex items-center gap-4 border transition-all cursor-pointer ${isActive ? 'bg-zinc-900 border-lime-500/50 scale-[1.02]' : 'border-transparent hover:bg-zinc-900/30'} ${isDone ? 'opacity-40' : 'opacity-100'}`}
-                            >
-                              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-black ${isActive ? 'bg-lime-500 text-black' : isDone ? 'bg-zinc-800 text-zinc-600' : 'bg-zinc-800 text-zinc-400'}`}>
-                                {i + 1}
-                              </div>
-                              <div className="flex-1">
-                                <div className={`text-sm font-black uppercase ${isActive ? 'text-white' : 'text-zinc-500'}`}>{ex.name}</div>
-                                <div className="text-[10px] text-zinc-600">{durationStr} • {ex.angle}</div>
-                              </div>
-                              {isActive && !isRunning && <span className="text-[10px] text-lime-500 font-bold uppercase tracking-wider">Up Next</span>}
-                              {isActive && isRunning && isResting && <span className="text-[10px] text-lime-500 font-bold uppercase tracking-wider animate-pulse">Resting</span>}
-                              {isActive && isRunning && !isResting && <span className="text-[10px] text-lime-500 animate-pulse font-bold uppercase tracking-wider">Active</span>}
-                            </div>
-                          );
-                        })}
-                    </div>
-                  </div>
-
+                       {/* Skip Button */}
+                       <button onClick={skipStep} className="p-4 rounded-xl hover:bg-white/5 text-zinc-500 hover:text-white transition-colors group hidden md:block">
+                           <SkipForward className="w-6 h-6 lg:w-8 lg:h-8 group-hover:translate-x-1 transition-transform" />
+                       </button>
+                   </div>
                 </div>
-              </main>
 
-              {/* Settings Modal */}
+                {/* RIGHT: WORKOUT LIST */}
+                <div className="w-80 lg:w-96 bg-zinc-950 border-l border-white/10 overflow-y-auto shrink-0 flex flex-col hidden md:flex">
+                   <div className="p-6 border-b border-white/10 bg-zinc-950 sticky top-0 z-10">
+                       <h3 className="text-zinc-400 font-mono text-xs uppercase tracking-widest mb-1">Workout Structure</h3>
+                       <p className="text-white font-medium">{activeRoutineKeys.length} Exercises • {TARGET_ROUNDS} Sets Each</p>
+                   </div>
+
+                   <div className="flex-1 p-4 flex flex-col gap-2">
+                       {activeRoutineKeys.map((key, i) => {
+                           const isActive = i === currentStep;
+                           const isDone = i < currentStep;
+                           const ex = exerciseLibrary[key] || { name: key };
+                           
+                           return (
+                               <div 
+                                 key={i}
+                                 onClick={() => handlePreview(i)} 
+                                 className={`
+                                   relative p-4 rounded-xl border transition-all cursor-pointer group
+                                   ${isActive 
+                                     ? 'bg-zinc-800 border-lime-500/50 shadow-[0_0_20px_-5px_rgba(132,204,22,0.2)]' 
+                                     : isDone 
+                                       ? 'bg-zinc-900/50 border-transparent opacity-50' 
+                                       : 'bg-zinc-900 border-transparent hover:bg-zinc-800 hover:border-zinc-700'
+                                   }
+                                 `}
+                               >
+                                   <div className="flex justify-between items-start mb-2">
+                                       <span className={`text-sm font-bold ${isActive ? 'text-white' : 'text-zinc-400'}`}>
+                                           {i + 1}. {ex.name}
+                                       </span>
+                                       {isActive && isRunning && (
+                                           <Activity className="w-4 h-4 text-lime-500 animate-pulse" />
+                                       )}
+                                   </div>
+                                   <div className="flex items-center gap-4 text-xs font-mono text-zinc-500">
+                                       <span>{activeConfig.rounds} x {formatTime(ex.duration)}</span>
+                                       <span>•</span>
+                                       <span>{ex.muscle}</span>
+                                   </div>
+                                   
+                                   {isActive && (
+                                       <div className="mt-3 h-1 bg-zinc-700 rounded-full overflow-hidden">
+                                            <div 
+                                                className="h-full bg-lime-500 transition-all duration-1000 ease-linear"
+                                                style={{ width: `${((currentSet) / TARGET_ROUNDS) * 100}%` }}
+                                            />
+                                       </div>
+                                   )}
+                               </div>
+                           );
+                       })}
+                   </div>
+                   
+                   <div className="p-4 border-t border-white/10">
+                        <button 
+                           onClick={() => setIsMuted(!isMuted)}
+                           className="w-full py-3 bg-zinc-900 hover:bg-zinc-800 rounded-lg text-zinc-400 text-sm font-medium transition-colors flex items-center justify-center gap-2"
+                        >
+                            {isMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
+                            {isMuted ? "Unmute Audio" : "Mute Audio"}
+                        </button>
+                   </div>
+                </div>
+
+              </div>
+
+              {/* SETTINGS MODAL */}
               {showSettings && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-md">
-                  <div className="bg-zinc-950 border border-zinc-800 p-8 rounded-[2rem] w-full max-w-md shadow-2xl">
-                    <div className="flex justify-between items-center mb-6">
-                      <h2 className="text-2xl font-black italic text-lime-400">Schedule</h2>
-                      <button onClick={() => setShowSettings(false)}><X size={24} className="text-zinc-500" /></button>
-                    </div>
-                    <div className="space-y-2 mb-6 max-h-[60vh] overflow-y-auto">
-                      {['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'].map((day, i) => (
-                        <div key={day} className="flex justify-between items-center p-3 bg-zinc-900 rounded-xl">
-                          <span className="text-xs font-bold text-zinc-400 uppercase">{day}</span>
-                          <select 
-                            value={schedule[i]}
-                            onChange={(e) => {
-                              const ns = [...schedule]; ns[i] = e.target.value; setSchedule(ns);
-                              localStorage.setItem('mundane_fitness_v5', JSON.stringify(ns));
-                            }}
-                            className="bg-black text-white text-xs p-2 rounded-lg font-bold uppercase outline-none border border-zinc-800 focus:border-lime-500"
-                          >
-                            <option value="Rest">Rest</option>
-                            <option value="Push A">Push A</option>
-                            <option value="Push B">Push B</option>
-                            <option value="Pull A">Pull A</option>
-                            <option value="Pull B">Pull B</option>
-                            <option value="Legs">Legs</option>
-                          </select>
-                        </div>
-                      ))}
-                    </div>
-                    <div className="space-y-2 mb-6 max-h-[60vh] overflow-y-auto">
-
-                        <div className="p-4 bg-zinc-900 rounded-xl mb-4">
-                            <h3 className="text-zinc-400 text-xs font-bold uppercase mb-2">Debug Audio</h3>
-                            <button 
-                                onClick={() => {
-                                    addToLog("Button Clicked..."); // 1. Immediate Feedback
-                                    const synth = window.speechSynthesis;
-                                    
-                                    // 2. Unstick iOS
-                                    synth.cancel();
-                                    
-                                    setTimeout(() => {
-                                        if (synth.paused) synth.resume();
-                                        
-                                        const u = new SpeechSynthesisUtterance("Alpha Bravo Charlie.");
-                                        u.rate = 0.9; // Slight slow down
-                                        u.onstart = () => addToLog("Event: Start");
-                                        u.onend = () => addToLog("Event: End");
-                                        u.onerror = (e) => addToLog(`Event: Err ${e.error}`);
-                                        
-                                        synth.speak(u);
-                                        addToLog("Cmd: Speak Sent");
-                                    }, 50);
-                                }}
-                                className="w-full mb-2 p-3 bg-zinc-800 text-white font-bold rounded-lg text-xs"
-                            >
-                                TEST VOICE (FORCE)
-                            </button>
-                            <div className="text-[10px] font-mono text-lime-500 bg-black p-2 rounded h-20 overflow-y-auto">
-                                {debugLog.length === 0 ? "No logs yet..." : debugLog.map((l, i) => <div key={i}>{l}</div>)}
-                            </div>
-                        </div>
-
-                        <button onClick={() => setShowSettings(false)} className="w-full py-4 bg-zinc-100 text-black font-black rounded-xl hover:scale-[0.98] transition-transform">SAVE CHANGES</button>
-                    </div>
+                  <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                      <div className="bg-zinc-900 border border-white/10 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl">
+                          <div className="p-6 border-b border-white/10 flex justify-between items-center">
+                              <h2 className="text-xl font-bold text-white">Settings</h2>
+                              <button onClick={() => setShowSettings(false)}><X className="w-6 h-6 text-zinc-500 hover:text-white" /></button>
+                          </div>
+                          
+                          <div className="p-6 flex flex-col gap-6">
+                              {/* Schedule Editor */}
+                              <div>
+                                  <label className="text-xs font-mono text-zinc-500 uppercase tracking-widest mb-3 block">Weekly Schedule ({userProfile})</label>
+                                  <div className="grid grid-cols-1 gap-2">
+                                      {schedule.map((proto, i) => (
+                                          <div key={i} className="flex items-center gap-3 bg-black/40 p-2 rounded-lg border border-white/5">
+                                              <span className="w-8 text-zinc-500 font-mono text-xs">{['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][i]}</span>
+                                              <select 
+                                                 value={proto}
+                                                 onChange={(e) => {
+                                                     const newSchedule = [...schedule];
+                                                     newSchedule[i] = e.target.value;
+                                                     setSchedule(newSchedule);
+                                                     localStorage.setItem(`mundane_fitness_schedule_${userProfile}`, JSON.stringify(newSchedule));
+                                                 }}
+                                                 className="flex-1 bg-zinc-800 text-white text-sm rounded px-2 py-1 outline-none focus:ring-1 focus:ring-lime-500"
+                                              >
+                                                  {Object.keys(protocols).map(k => <option key={k} value={k}>{k}</option>)}
+                                              </select>
+                                          </div>
+                                      ))}
+                                  </div>
+                              </div>
+                          </div>
+                      </div>
                   </div>
-                </div>
               )}
             </div>
           );
+
         }
 
         const root = createRoot(document.getElementById('root'));
