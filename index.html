@@ -945,7 +945,7 @@
           );
 
           return (
-            <div className="h-screen w-screen bg-[#050505] text-white font-sans flex flex-col overflow-hidden">
+            <div className="h-[100dvh] w-screen bg-[#050505] text-white font-sans flex flex-col overflow-hidden supports-[height:100dvh]:h-[100dvh]">
               <audio ref={audioRef} onEnded={nextTrack} />
               <audio ref={bgAudioRef} loop src="data:audio/mp3;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4Ljc2LjEwMAAAAAAAAAAAAAAA//OEAAAAAAAAAAAAAAAAAAAAAAAASW5mbwAAAA8AAAAEAAABIADAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMD//////////////////////////////////////////////////////////////////8AAAAATGF2YzU4LjEzAAAAAAAAAAAAAAAAJAAAAAAAAAAAASAA82xUAAAAAAA//OEZAAAAAAIAAAAAAAAEAAABAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//OEZAAAAAAIAAAAAAAAEAAABAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" />
               
@@ -989,11 +989,31 @@
                 {/* LEFT: MAIN WORKOUT AREA */}
                 <div className="flex-1 flex flex-col relative min-w-0">
                    {/* VISUAL & OVERLAY */}
-                   <div className="flex-1 relative overflow-hidden bg-zinc-900 flex items-center justify-center">
+                   <div className="flex-1 relative overflow-hidden bg-zinc-900 flex flex-col items-center justify-center">
                       <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:40px_40px]"></div>
                       <div className="w-full h-full p-4 lg:p-8 relative z-10 flex items-center justify-center">
                           <ExerciseVisual exerciseKey={currentKey} assets={availableAssets} />
                       </div>
+
+
+                      
+                      {/* MOBILE UP NEXT (Split View) */}
+                      {nextExDisplay && !isResting && (
+                          <div 
+                              className="lg:hidden w-full bg-black border-t border-white/10 shrink-0 p-4 flex items-center gap-4 cursor-pointer hover:bg-zinc-900 transition-colors animate-in slide-in-from-bottom-10 fade-in duration-500"
+                              onClick={() => setSelectedExercise(nextExDisplay)}
+                          >
+                               <div className="w-16 h-16 bg-zinc-800 rounded-lg overflow-hidden shrink-0 border border-white/10 relative">
+                                   <img src={`assets/infographics/${nextExDisplay.key}.png`} onError={e => e.target.src=`assets/infographics/${nextExDisplay.key}.jpg`} className="w-full h-full object-cover" />
+                                   <div className="absolute inset-0 bg-black/20"></div>
+                               </div>
+                               <div className="flex-col min-w-0 flex items-start">
+                                    <span className="text-[10px] text-lime-500 font-mono uppercase tracking-widest mb-1">Up Next</span>
+                                    <span className="text-lg font-bold text-white leading-tight truncate w-full text-left">{nextExDisplay.name}</span>
+                                    <span className="text-xs text-zinc-500">{nextExDisplay.muscle}</span>
+                               </div>
+                          </div>
+                      )}
                       
                       {isResting && (
                           <div className="absolute inset-0 bg-black z-20 flex items-center justify-center animate-in fade-in duration-300">
